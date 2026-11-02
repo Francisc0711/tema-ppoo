@@ -4,7 +4,7 @@ artifact: pr
 branch: app-foundation
 base: main
 updated_commit: none     # HEAD after updating the branch from the base branch, if it was updated
-pr: not created          # the pull request's address, once created
+pr: https://github.com/Francisc0711/tema-ppoo/pull/1
 ---
 
 # feat(app-foundation): add maven build and core domain model
