@@ -4,14 +4,10 @@ Each item is one increment, developed as a task (see `AGENTS.md`). Status: plann
 
 | # | Slug | Increment | Status | Pull request |
 | --- | --- | --- | --- | --- |
-| 1 | app-foundation | Express app and server, configuration from environment variables, request logging, health check, JSON responses for unknown routes and errors, lint and test setup | planned | |
-| 2 | user-registration | `POST /auth/register`: e-mail and password, password hashing, unique e-mail; users in a local JSON file; manual testing with Postman or a similar client | planned | |
-| 3 | user-login | `POST /auth/login` with input validation; issues a JSON Web Token | planned | |
-| 4 | controllers-services | Restructure the code into routes, controllers and services, with no change in behavior | planned | |
-| 5 | task-crud | CRUD on `/tasks`, without authentication | planned | |
-| 6 | dummy-data | Seed script with realistic fake users and tasks (Faker or similar), for testing with more content | planned | |
-| 7 | task-authorization | `/tasks` only for authenticated users; each user manages only their own tasks; stricter validation | planned | |
-| 8 | firestore-storage | Cloud Firestore behind the storage module; tests on the Firestore emulator | planned | |
+| 1 | app-foundation | Crearea claselor de bază (Tranzactie, Cont) folosind încapsularea și structuri de date (vectori, ArrayList). | done | https://github.com/Francisc0711/tema-ppoo/pull/1 |
+| 2 | file-persistence | Implementarea logicii de citire și scriere a datelor exclusiv în fișiere text/binare. | planned | |
+| 3 | transaction-operations | Logica de procesare: adăugare, actualizare și ștergere tranzacții din memorie și fișiere. | planned | |
+| 4 | cli-menu | O interfață simplă în consolă pentru ca utilizatorul să interacționeze cu sistemul de e-banking. | planned | |
 
 ## Follow-ups
 
