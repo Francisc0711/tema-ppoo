@@ -4,24 +4,25 @@ Instructions for the coding agent working in this repository, for example Antigr
 
 ## Project
 
-Task API: a REST backend in Node.js and Express 5 with user registration, JWT authentication, authorization and CRUD over tasks. Data lives in a local JSON file first and in Cloud Firestore later. Read `README.md` and `docs/ARCHITECTURE.md` first.
+PPOO Project: A Java 17 application strictly following Object-Oriented Programming (OOP) principles (encapsulation, inheritance, polymorphism). Read `README.md` and `docs/ARCHITECTURE.md` first.
 
-In the API, a task is a user's to-do (`/tasks`); in the workflow below, a task is a change to this repository.
+In this workflow, a task is a change to this repository.
 
 All code, comments, documents and commit messages are in English.
 
 ## Commands
 
-The workflow skills use these commands by name. Run install first in a new checkout and whenever the dependencies change. The first roadmap item creates `package.json` with these scripts.
+The workflow skills use these commands by name. Run install first in a new checkout and whenever the dependencies change. 
 
 | Name | Command | Notes |
 | --- | --- | --- |
-| install | `npm ci` | installs the versions in `package-lock.json`; `npm install <package>@<version>` adds a dependency and creates the lock file if it is missing |
-| build | none | plain JavaScript, no build step |
-| test | `npm test` | runs all tests (`node:test`) and exits |
-| lint | `npm run lint` | ESLint; must report nothing |
-| start | `npm start` | starts the API; the port comes from `PORT` |
-| dev | `npm run dev` | like start, with `.env` loaded and a restart on every change |
+| install | `mvn clean install -DskipTests` | installs dependencies and compiles the project |
+| build | `mvn compile` | compiles the Java source code |
+| test | `mvn test` | runs all JUnit tests and exits |
+| lint | `none` | skipped for now, rely on task-code-review for OOP standards |
+| start | `mvn exec:java` | starts the main application |
+| dev | `mvn compile exec:java` | compiles and runs the application |
+
 
 Configuration comes from environment variables, in development from `.env` (`node --env-file=.env`). Never commit `.env`, keys or `node_modules`.
 
