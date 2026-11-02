@@ -24,7 +24,7 @@ Set up the Maven project and define the core domain model — `Account`, `Transa
 | R5 | `TransactionType` enum (`DEPOSIT`, `WITHDRAWAL`, `TRANSFER`) | `transaction.getType()` returns the correct enum constant for each subtype |
 | R6 | Fixed-size `Transaction[]` array as a "recent history" buffer (capacity 10) in `Account` | Adding the 11th transaction to an account's history discards the oldest entry |
 | R7 | `BankRepository` holding `ArrayList<Account>` and `ArrayList<Transaction>` in memory | `addAccount()` / `findAccountById()` / `addTransaction()` / `findTransactionsByAccount()` work correctly |
-| R8 | `ValidationException` (checked) and `InsufficientFundsException` (unchecked) custom exceptions | Constructing an `Account` with a null `accountNumber` throws `ValidationException`; constructing with `balance < 0` throws `InsufficientFundsException` |
+| R8 | `ValidationException` (checked) and `InsufficientFundsException` (unchecked) custom exceptions | Constructing an `Account` with a null `accountNumber` throws `ValidationException`; constructing with `balance < 0` throws `ValidationException` |
 | R9 | JUnit 5 tests covering R3 success path, R3 error cases (R8), R4 subtype instantiation, R6 buffer eviction, R7 CRUD | All tests pass via `mvn test` |
 
 ## Out of scope
