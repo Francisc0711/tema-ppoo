@@ -17,6 +17,11 @@ public class DepositTransaction extends Transaction {
     }
 
     @Override
+    public DepositTransaction withAmount(BigDecimal amount) throws ValidationException {
+        return new DepositTransaction(getId(), getCreatedAt(), getAccountId(), amount);
+    }
+
+    @Override
     public TransactionType getType() {
         return TransactionType.DEPOSIT;
     }

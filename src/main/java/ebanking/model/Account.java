@@ -1,9 +1,12 @@
 package ebanking.model;
 
+import ebanking.exception.InsufficientFundsException;
 import ebanking.exception.ValidationException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 /** A bank account with a fixed-size buffer of its most recent transactions. */
 public class Account extends BankEntity {
@@ -12,7 +15,7 @@ public class Account extends BankEntity {
 
     private final String accountNumber;
     private String ownerName;
-    private final BigDecimal balance;
+    private BigDecimal balance;
     private final AccountType type;
 
     private final Transaction[] recentHistory = new Transaction[HISTORY_CAPACITY];
@@ -60,10 +63,34 @@ public class Account extends BankEntity {
         return type;
     }
 
+    /** Increases the balance by a positive amount. */
+    public void deposit(BigDecimal amount) throws ValidationException {
+        validateAmount(amount);
+        balance = balance.add(amount);
+    }
+
+    /** Decreases the balance by a positive amount; the balance never goes below zero. */
+    public void withdraw(BigDecimal amount) throws ValidationException {
+        validateAmount(amount);
+        if (balance.compareTo(amount) < 0) {
+            throw new InsufficientFundsException("insufficient funds on " + accountNumber);
+        }
+        balance = balance.subtract(amount);
+    }
+
+    private static void validateAmount(BigDecimal amount) throws ValidationException {
+        if (amount == null || amount.signum() <= 0) {
+            throw new ValidationException("amount must be positive");
+        }
+    }
+
     /** Adds a transaction to the history; when full, the oldest entry is overwritten. */
     public void addToHistory(Transaction transaction) throws ValidationException {
         if (transaction == null) {
             throw new ValidationException("transaction is required");
+        }
+        if (!transaction.involves(getId())) {
+            throw new ValidationException("transaction does not involve this account");
         }
         int end = (historyStart + historySize) % HISTORY_CAPACITY;
         recentHistory[end] = transaction;
@@ -71,6 +98,18 @@ public class Account extends BankEntity {
             historySize++;
         } else {
             historyStart = (historyStart + 1) % HISTORY_CAPACITY; // overwrote the oldest
+        }
+    }
+
+    /** Rebuilds the history from all transactions, keeping the last ones that involve this account. */
+    public void rebuildHistory(List<Transaction> all) throws ValidationException {
+        Arrays.fill(recentHistory, null);
+        historyStart = 0;
+        historySize = 0;
+        for (Transaction t : all) {
+            if (t.involves(getId())) {
+                addToHistory(t);
+            }
         }
     }
 

@@ -37,6 +37,9 @@ public abstract class Transaction extends BankEntity {
 
     public abstract TransactionType getType();
 
+    /** Returns a copy with the same id, creation time and accounts, and a new amount. */
+    public abstract Transaction withAmount(BigDecimal amount) throws ValidationException;
+
     /** Returns whether this transaction concerns the given account. */
     public boolean involves(String accountId) {
         return this.accountId.equals(accountId);

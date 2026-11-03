@@ -43,6 +43,33 @@ public class BankRepository {
         transactions.add(transaction);
     }
 
+    public Optional<Transaction> findTransactionById(String id) {
+        for (Transaction transaction : transactions) {
+            if (transaction.getId().equals(id)) {
+                return Optional.of(transaction);
+            }
+        }
+        return Optional.empty();
+    }
+
+    public boolean removeTransaction(String id) {
+        return transactions.removeIf(t -> t.getId().equals(id));
+    }
+
+    /** Replaces the stored transaction with the same id, keeping its position. */
+    public void replaceTransaction(Transaction transaction) throws ValidationException {
+        if (transaction == null) {
+            throw new ValidationException("transaction is required");
+        }
+        for (int i = 0; i < transactions.size(); i++) {
+            if (transactions.get(i).getId().equals(transaction.getId())) {
+                transactions.set(i, transaction);
+                return;
+            }
+        }
+        throw new ValidationException("unknown transaction: " + transaction.getId());
+    }
+
     public List<Transaction> findTransactionsByAccount(String accountId) {
         List<Transaction> result = new ArrayList<>();
         for (Transaction transaction : transactions) {

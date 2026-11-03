@@ -17,6 +17,11 @@ public class WithdrawalTransaction extends Transaction {
     }
 
     @Override
+    public WithdrawalTransaction withAmount(BigDecimal amount) throws ValidationException {
+        return new WithdrawalTransaction(getId(), getCreatedAt(), getAccountId(), amount);
+    }
+
+    @Override
     public TransactionType getType() {
         return TransactionType.WITHDRAWAL;
     }
