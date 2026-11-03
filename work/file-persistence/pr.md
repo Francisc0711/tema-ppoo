@@ -4,7 +4,7 @@ artifact: pr
 branch: file-persistence
 base: main
 updated_commit: none
-pr: not created
+pr: https://github.com/Francisc0711/tema-ppoo/pull/2
 ---
 
 # feat(storage): save and load accounts and transactions in CSV files
