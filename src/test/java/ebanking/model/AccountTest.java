@@ -1,5 +1,6 @@
 package ebanking.model;
 
+import ebanking.exception.InsufficientFundsException;
 import ebanking.exception.ValidationException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -71,5 +72,27 @@ class AccountTest {
     void restoreConstructorRejectsBlankId() {
         assertThrows(ValidationException.class, () -> new Account(" ", LocalDateTime.now(), "RO01",
                 "Ana Pop", BigDecimal.TEN, AccountType.CHECKING));
+    }
+
+    @Test
+    @DisplayName("deposit and withdraw change the balance; overdrawing throws and keeps it")
+    void depositAndWithdrawChangeBalance() throws ValidationException {
+        Account account = new Account("RO01", "Ana Pop", new BigDecimal("50"), AccountType.CHECKING);
+
+        account.deposit(new BigDecimal("10"));
+        account.withdraw(new BigDecimal("20"));
+        assertEquals(new BigDecimal("40"), account.getBalance());
+
+        assertThrows(InsufficientFundsException.class, () -> account.withdraw(new BigDecimal("80")));
+        assertEquals(new BigDecimal("40"), account.getBalance());
+    }
+
+    @Test
+    @DisplayName("adding a transaction of another account to the history throws ValidationException")
+    void foreignTransactionIsRejectedInHistory() throws ValidationException {
+        Account account = new Account("RO01", "Ana Pop", BigDecimal.ZERO, AccountType.CHECKING);
+
+        assertThrows(ValidationException.class,
+                () -> account.addToHistory(new DepositTransaction("other-id", BigDecimal.TEN)));
     }
 }
