@@ -5,7 +5,7 @@ Open shortcuts and placeholders. Each item comes from the `tech-debt.md` of a ta
 | ID | Location | Description | Removed by | Status |
 | --- | --- | --- | --- | --- |
 | TD-app-foundation-1 | `src/main/java/ebanking/Main.java` | `main` only prints a line instead of the console menu | cli-menu | open |
-| TD-app-foundation-F1 | `src/main/java/ebanking/model/Account.java` | `addToHistory` accepts a transaction that does not involve the account; reject it with `ValidationException` and a test | transaction-operations | open |
+| TD-app-foundation-F1 | `src/main/java/ebanking/model/Account.java` | `addToHistory` accepts a transaction that does not involve the account; reject it with `ValidationException` and a test | transaction-operations | resolved in transaction-operations |
 | TD-app-foundation-F2 | `src/test/java/ebanking/model/TransactionTest.java` | test T5 depends on `BankRepository`; move the type-filter part to `BankRepositoryTest` | any later task touching these tests | open |
 | TD-file-persistence-1 | `src/main/java/ebanking/storage/CsvBankStorage.java` (`save`) | Files are written in place; a crash mid-save can leave a truncated file | crash-safe-save | open |
 | TD-file-persistence-2 | `src/main/java/ebanking/storage/CsvBankStorage.java` | Duplicate account or transaction ids are not rejected on load; a lone `\r` inside a field comes back as `\n` | later hardening | open |

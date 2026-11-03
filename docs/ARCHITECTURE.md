@@ -2,7 +2,7 @@
 
 ## Overview
 
-A Java 17 console application built with Maven. The domain layer (`ebanking.model`) is a class hierarchy with private fields and validation in constructors; `ebanking.repository` keeps all objects in memory in `ArrayList`s; `ebanking.storage` saves and loads them as CSV files. Transaction processing and the console menu are added by the increments in `docs/ROADMAP.md`.
+A Java 17 console application built with Maven. The domain layer (`ebanking.model`) is a class hierarchy with private fields and validation in constructors; `ebanking.repository` keeps all objects in memory in `ArrayList`s; `ebanking.storage` saves and loads them as CSV files. `ebanking.service` applies transactions to balances; the console menu is added by `cli-menu` (`docs/ROADMAP.md`).
 
 ## Components
 
@@ -10,8 +10,9 @@ A Java 17 console application built with Maven. The domain layer (`ebanking.mode
 | --- | --- | --- |
 | Entry point | `src/main/java/ebanking/Main.java` | started by `mvn exec:java`; loads `data/` and prints the counts until `cli-menu` |
 | Domain model | `src/main/java/ebanking/model/` | `BankEntity`, `Account`, `Transaction` and subtypes, enums `AccountType`, `TransactionType` |
-| Exceptions | `src/main/java/ebanking/exception/` | `ValidationException` (checked, invalid input), `InsufficientFundsException` (unchecked, thrown from `transaction-operations`) |
+| Exceptions | `src/main/java/ebanking/exception/` | `ValidationException` (checked, invalid input), `InsufficientFundsException` (unchecked, thrown by `Account.withdraw`) |
 | Repository | `src/main/java/ebanking/repository/BankRepository.java` | in-memory store of accounts and transactions; rejects duplicate account numbers; read methods return copies |
+| Service | `src/main/java/ebanking/service/TransactionService.java` | `addDeposit`, `addWithdrawal`, `addTransfer`, `deleteTransaction`, `updateTransactionAmount`; validates, mutates, then saves through `CsvBankStorage` |
 | Storage | `src/main/java/ebanking/storage/` | `CsvBankStorage` (`save`, `load`) writes and reads `accounts.csv` and `transactions.csv` in a directory; `CsvCodec` quotes and parses fields; `StorageException` (checked) names file and line |
 
 ## Data model
@@ -19,7 +20,7 @@ A Java 17 console application built with Maven. The domain layer (`ebanking.mode
 | Entity | Fields | Stored in |
 | --- | --- | --- |
 | `BankEntity` (abstract) | `id` (UUID string), `createdAt` | base of every entity |
-| `Account` | `accountNumber` (unique), `ownerName`, `balance` (`BigDecimal`, not negative), `type` (`CHECKING`, `SAVINGS`), `recentHistory` (`Transaction[10]`, circular, oldest discarded) | `BankRepository` (memory) |
+| `Account` | `accountNumber` (unique), `ownerName`, `balance` (`BigDecimal`, not negative), `type` (`CHECKING`, `SAVINGS`), `recentHistory` (`Transaction[10]`, circular, oldest discarded); balance changes only via `deposit`/`withdraw`; `addToHistory` rejects foreign transactions | `BankRepository` (memory) |
 | `Transaction` (abstract) | `accountId`, `amount` (`BigDecimal`, positive), `getType()` | `BankRepository` (memory) |
 | `DepositTransaction`, `WithdrawalTransaction` | as `Transaction` | `BankRepository` (memory) |
 | `TransferTransaction` | as `Transaction` plus `targetAccountId` (not the source) | `BankRepository` (memory) |
@@ -35,7 +36,7 @@ UTF-8, header line, ISO-8601 dates, `BigDecimal.toPlainString()` amounts, fields
 
 ## Request flow
 
-No user interaction yet; `cli-menu` adds the flow from the console to the repository.
+No user interaction yet; `cli-menu` adds the flow from the console. Service flow: resolve accounts (unknown id gives `ValidationException`), check funds, mutate balances, update repository and histories, then `CsvBankStorage.save`.
 
 ## Decisions
 
@@ -52,3 +53,8 @@ No user interaction yet; `cli-menu` adds the flow from the console to the reposi
 | D9 | Restore constructors keep stored `id` and `createdAt`; normal constructors unchanged | loaded objects equal the saved ones | file-persistence |
 | D10 | An invalid line fails the whole load with `StorageException` (file, line) | protects data integrity; no partial repository | file-persistence |
 | D11 | Account history rebuilt on load from the transactions in file order (last 10) | history is not stored separately | file-persistence |
+| D12 | Rules live in `TransactionService`; `BankRepository` stays free of rules and I/O | one place for business rules, testable with a temp directory | transaction-operations |
+| D13 | `Transaction` stays immutable; update replaces it with `withAmount` (same id, `createdAt`, list position) | keeps immutability (OOP-1) | transaction-operations |
+| D14 | Delete reverses the balance effect; reversal that would make a balance negative throws `InsufficientFundsException` | balances stay consistent with history | transaction-operations |
+| D15 | Funds are checked before any mutation; histories of affected accounts are rebuilt from the repository (last 10) after delete or update | atomic operations without rollback code | transaction-operations |
+| D16 | `save` runs only after success; a failed save leaves memory ahead of disk | accepted in scope; see `crash-safe-save` | transaction-operations |
