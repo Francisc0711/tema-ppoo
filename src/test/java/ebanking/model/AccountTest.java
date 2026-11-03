@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -52,5 +53,23 @@ class AccountTest {
         assertEquals(Account.HISTORY_CAPACITY, history.length);
         assertSame(added[1], history[0]);
         assertSame(added[10], history[history.length - 1]);
+    }
+
+    @Test
+    @DisplayName("the restore constructor keeps the stored id and creation time")
+    void restoreConstructorKeepsIdAndCreatedAt() throws ValidationException {
+        LocalDateTime created = LocalDateTime.of(2026, 1, 2, 3, 4, 5);
+
+        Account account = new Account("id-1", created, "RO01", "Ana Pop", BigDecimal.TEN, AccountType.SAVINGS);
+
+        assertEquals("id-1", account.getId());
+        assertEquals(created, account.getCreatedAt());
+    }
+
+    @Test
+    @DisplayName("the restore constructor with a blank id throws ValidationException")
+    void restoreConstructorRejectsBlankId() {
+        assertThrows(ValidationException.class, () -> new Account(" ", LocalDateTime.now(), "RO01",
+                "Ana Pop", BigDecimal.TEN, AccountType.CHECKING));
     }
 }
