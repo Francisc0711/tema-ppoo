@@ -36,6 +36,11 @@ public class TransferTransaction extends Transaction {
     }
 
     @Override
+    public TransferTransaction withAmount(BigDecimal amount) throws ValidationException {
+        return new TransferTransaction(getId(), getCreatedAt(), getAccountId(), targetAccountId, amount);
+    }
+
+    @Override
     public TransactionType getType() {
         return TransactionType.TRANSFER;
     }
