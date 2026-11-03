@@ -3,6 +3,7 @@ package ebanking.model;
 import ebanking.exception.ValidationException;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 /** A bank account with a fixed-size buffer of its most recent transactions. */
 public class Account extends BankEntity {
@@ -20,19 +21,21 @@ public class Account extends BankEntity {
 
     public Account(String accountNumber, String ownerName, BigDecimal initialBalance, AccountType type)
             throws ValidationException {
-        if (accountNumber == null || accountNumber.isBlank()) {
-            throw new ValidationException("accountNumber is required");
-        }
-        validateOwnerName(ownerName);
-        if (type == null) {
-            throw new ValidationException("type is required");
-        }
-        if (initialBalance == null || initialBalance.signum() < 0) {
-            throw new ValidationException("initial balance must be zero or positive");
-        }
+        validate(accountNumber, ownerName, initialBalance, type);
         this.accountNumber = accountNumber;
         this.ownerName = ownerName;
         this.balance = initialBalance;
+        this.type = type;
+    }
+
+    /** Restores an account with a stored id and creation time. */
+    public Account(String id, LocalDateTime createdAt, String accountNumber, String ownerName,
+                   BigDecimal balance, AccountType type) throws ValidationException {
+        super(id, createdAt);
+        validate(accountNumber, ownerName, balance, type);
+        this.accountNumber = accountNumber;
+        this.ownerName = ownerName;
+        this.balance = balance;
         this.type = type;
     }
 
@@ -78,6 +81,20 @@ public class Account extends BankEntity {
             copy[i] = recentHistory[(historyStart + i) % HISTORY_CAPACITY];
         }
         return copy;
+    }
+
+    private static void validate(String accountNumber, String ownerName, BigDecimal balance, AccountType type)
+            throws ValidationException {
+        if (accountNumber == null || accountNumber.isBlank()) {
+            throw new ValidationException("accountNumber is required");
+        }
+        validateOwnerName(ownerName);
+        if (type == null) {
+            throw new ValidationException("type is required");
+        }
+        if (balance == null || balance.signum() < 0) {
+            throw new ValidationException("initial balance must be zero or positive");
+        }
     }
 
     private static void validateOwnerName(String ownerName) throws ValidationException {
