@@ -2,7 +2,7 @@
 task: cli-menu
 artifact: scope
 version: 1
-status: draft            # draft | confirmed (only after the user confirms)
+status: confirmed
 branch: cli-menu
 roadmap_item: cli-menu
 ---
