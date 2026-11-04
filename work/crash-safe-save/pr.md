@@ -4,7 +4,7 @@ artifact: pr
 branch: crash-safe-save
 base: main
 updated_commit: none
-pr: not created
+pr: https://github.com/Francisc0711/tema-ppoo/pull/5
 ---
 
 # fix(storage): make CSV save crash-safe
