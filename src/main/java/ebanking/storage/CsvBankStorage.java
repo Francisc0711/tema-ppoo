@@ -15,8 +15,10 @@ import java.io.BufferedWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -26,6 +28,7 @@ public class CsvBankStorage {
 
     static final String ACCOUNTS_FILE = "accounts.csv";
     static final String TRANSACTIONS_FILE = "transactions.csv";
+    private static final String TEMP_SUFFIX = ".tmp";
     private static final List<String> ACCOUNT_HEADER =
             List.of("id", "createdAt", "accountNumber", "ownerName", "balance", "type");
     private static final List<String> TRANSACTION_HEADER =
@@ -40,14 +43,29 @@ public class CsvBankStorage {
         this.directory = directory;
     }
 
-    // TODO(TD-file-persistence-1): write to a temporary file and move it, so a crash cannot truncate data
     public void save(BankRepository repository) throws StorageException {
         try {
             Files.createDirectories(directory);
         } catch (IOException e) {
             throw new StorageException("cannot write " + directory, e);
         }
-        try (BufferedWriter out = open(ACCOUNTS_FILE)) {
+        Path accountsTmp = directory.resolve(ACCOUNTS_FILE + TEMP_SUFFIX);
+        Path transactionsTmp = directory.resolve(TRANSACTIONS_FILE + TEMP_SUFFIX);
+        try {
+            writeAccounts(accountsTmp, repository);
+            writeTransactions(transactionsTmp, repository);
+            move(accountsTmp, directory.resolve(ACCOUNTS_FILE));
+            move(transactionsTmp, directory.resolve(TRANSACTIONS_FILE));
+        } catch (IOException e) {
+            throw new StorageException("cannot write " + directory, e);
+        } finally {
+            deleteQuietly(accountsTmp);
+            deleteQuietly(transactionsTmp);
+        }
+    }
+
+    private void writeAccounts(Path path, BankRepository repository) throws StorageException {
+        try (BufferedWriter out = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
             writeRecord(out, ACCOUNT_HEADER);
             for (Account a : repository.getAccounts()) {
                 writeRecord(out, List.of(a.getId(), a.getCreatedAt().toString(), a.getAccountNumber(),
@@ -56,7 +74,10 @@ public class CsvBankStorage {
         } catch (IOException e) {
             throw new StorageException("cannot write " + ACCOUNTS_FILE, e);
         }
-        try (BufferedWriter out = open(TRANSACTIONS_FILE)) {
+    }
+
+    private void writeTransactions(Path path, BankRepository repository) throws StorageException {
+        try (BufferedWriter out = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
             writeRecord(out, TRANSACTION_HEADER);
             for (Transaction t : repository.getTransactions()) {
                 String target = t instanceof TransferTransaction transfer ? transfer.getTargetAccountId() : "";
@@ -68,15 +89,27 @@ public class CsvBankStorage {
         }
     }
 
+    private void move(Path tmp, Path target) throws IOException {
+        try {
+            Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException e) {
+            Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    private static void deleteQuietly(Path path) {
+        try {
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            // best effort: a leftover temporary file is overwritten by the next save
+        }
+    }
+
     public BankRepository load() throws StorageException {
         BankRepository repository = new BankRepository();
         readFile(ACCOUNTS_FILE, ACCOUNT_HEADER, fields -> readAccount(fields, repository));
         readFile(TRANSACTIONS_FILE, TRANSACTION_HEADER, fields -> readTransaction(fields, repository));
         return repository;
-    }
-
-    private BufferedWriter open(String file) throws IOException {
-        return Files.newBufferedWriter(directory.resolve(file), StandardCharsets.UTF_8);
     }
 
     private static void writeRecord(BufferedWriter out, List<String> fields) throws IOException {
