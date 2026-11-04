@@ -4,7 +4,7 @@ artifact: pr
 branch: cli-menu
 base: main
 updated_commit: none
-pr: not created
+pr: https://github.com/Francisc0711/tema-ppoo/pull/4
 ---
 
 # feat(cli-menu): add console menu
