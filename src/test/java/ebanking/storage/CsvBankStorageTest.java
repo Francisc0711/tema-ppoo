@@ -203,4 +203,24 @@ class CsvBankStorageTest {
         assertTrue(java.util.Arrays.equals(transactionsBefore, Files.readAllBytes(dir.resolve("transactions.csv"))));
         assertTrue(Files.notExists(dir.resolve("accounts.csv.tmp")));
     }
+
+    @Test
+    @DisplayName("save falls back to a plain replace when atomic move is not supported")
+    void saveFallsBackWithoutAtomicMove() throws Exception {
+        BankRepository repo = new BankRepository();
+        account(repo, "RO01", "Ana");
+        CsvBankStorage.FileMover noAtomic = (source, target, options) -> {
+            if (java.util.Arrays.asList(options).contains(java.nio.file.StandardCopyOption.ATOMIC_MOVE)) {
+                throw new java.nio.file.AtomicMoveNotSupportedException(source.toString(), target.toString(), "test");
+            }
+            Files.move(source, target, options);
+        };
+        CsvBankStorage storage = new CsvBankStorage(dir, noAtomic);
+        storage.save(repo);
+        account(repo, "RO02", "Ion");
+
+        storage.save(repo);
+
+        assertEquals(2, new CsvBankStorage(dir).load().getAccounts().size());
+    }
 }

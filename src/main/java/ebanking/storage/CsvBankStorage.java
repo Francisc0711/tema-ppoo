@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
+import java.nio.file.CopyOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -34,13 +35,24 @@ public class CsvBankStorage {
     private static final List<String> TRANSACTION_HEADER =
             List.of("id", "createdAt", "type", "accountId", "targetAccountId", "amount");
 
+    /** Moves a file; replaceable in tests to simulate a file system without atomic move. */
+    interface FileMover {
+        void move(Path source, Path target, CopyOption... options) throws IOException;
+    }
+
     private final Path directory;
+    private final FileMover mover;
 
     public CsvBankStorage(Path directory) {
+        this(directory, Files::move);
+    }
+
+    CsvBankStorage(Path directory, FileMover mover) {
         if (directory == null) {
             throw new IllegalArgumentException("directory is required");
         }
         this.directory = directory;
+        this.mover = mover;
     }
 
     public void save(BankRepository repository) throws StorageException {
@@ -91,9 +103,9 @@ public class CsvBankStorage {
 
     private void move(Path tmp, Path target) throws IOException {
         try {
-            Files.move(tmp, target, StandardCopyOption.ATOMIC_MOVE);
+            mover.move(tmp, target, StandardCopyOption.ATOMIC_MOVE);
         } catch (AtomicMoveNotSupportedException e) {
-            Files.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
+            mover.move(tmp, target, StandardCopyOption.REPLACE_EXISTING);
         }
     }
 
