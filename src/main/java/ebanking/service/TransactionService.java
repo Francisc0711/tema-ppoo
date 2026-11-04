@@ -3,6 +3,7 @@ package ebanking.service;
 import ebanking.exception.InsufficientFundsException;
 import ebanking.exception.ValidationException;
 import ebanking.model.Account;
+import ebanking.model.AccountType;
 import ebanking.model.DepositTransaction;
 import ebanking.model.Transaction;
 import ebanking.model.TransferTransaction;
@@ -33,6 +34,15 @@ public class TransactionService {
         }
         this.repository = repository;
         this.storage = storage;
+    }
+
+    /** Creates an account, rejecting invalid data and duplicate numbers, and saves. */
+    public Account createAccount(String number, String owner, BigDecimal balance, AccountType type)
+            throws ValidationException, StorageException {
+        Account account = new Account(number, owner, balance, type);
+        repository.addAccount(account);
+        storage.save(repository);
+        return account;
     }
 
     public Transaction addDeposit(String accountId, BigDecimal amount)

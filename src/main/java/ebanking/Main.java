@@ -1,6 +1,8 @@
 package ebanking;
 
+import ebanking.cli.ConsoleMenu;
 import ebanking.repository.BankRepository;
+import ebanking.service.TransactionService;
 import ebanking.storage.CsvBankStorage;
 import ebanking.storage.StorageException;
 
@@ -14,14 +16,14 @@ public final class Main {
 
     public static void main(String[] args) {
         CsvBankStorage storage = new CsvBankStorage(Path.of("data"));
+        BankRepository repository;
         try {
-            BankRepository repository = storage.load();
-            System.out.println("Loaded " + repository.getAccounts().size() + " accounts and "
-                    + repository.getTransactions().size() + " transactions from data/");
+            repository = storage.load(); // empty when the files are missing
         } catch (StorageException e) {
+            // do not run on a broken file: the first save would overwrite it
             System.err.println("Cannot load data: " + e.getMessage());
+            return;
         }
-        // TODO(TD-app-foundation-1): replace with the console menu (cli-menu)
-        System.out.println("E-Banking app - console menu coming in cli-menu");
+        new ConsoleMenu(System.in, System.out, repository, new TransactionService(repository, storage)).run();
     }
 }

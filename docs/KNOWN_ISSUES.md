@@ -10,3 +10,5 @@ Bugs and limitations that are known but not fixed. Each item names the task in w
 | KI-file-persistence-4 | The error text for a bad number is the raw `BigDecimal` message | nit | file-persistence | open |
 | KI-transaction-operations-1 | `Account.rebuildHistory` has no unit test for more than 10 matching transactions (review F2); checked exploratorily and works | minor | transaction-operations | open |
 | KI-transaction-operations-2 | A failed `save` leaves memory ahead of disk (follow-up `crash-safe-save`) | minor | transaction-operations | open |
+| KI-cli-menu-1 | A broken stdin (`UncheckedIOException`) ends the program with a stack trace (review F3) | minor | cli-menu | open |
+| KI-cli-menu-2 | The transaction listing prints the raw ISO timestamp with microseconds | nit | cli-menu | open |

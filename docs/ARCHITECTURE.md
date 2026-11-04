@@ -2,17 +2,18 @@
 
 ## Overview
 
-A Java 17 console application built with Maven. The domain layer (`ebanking.model`) is a class hierarchy with private fields and validation in constructors; `ebanking.repository` keeps all objects in memory in `ArrayList`s; `ebanking.storage` saves and loads them as CSV files. `ebanking.service` applies transactions to balances; the console menu is added by `cli-menu` (`docs/ROADMAP.md`).
+A Java 17 console application built with Maven. The domain layer (`ebanking.model`) is a class hierarchy with private fields and validation in constructors; `ebanking.repository` keeps all objects in memory in `ArrayList`s; `ebanking.storage` saves and loads them as CSV files. `ebanking.service` applies transactions to balances; `ebanking.cli` holds the console menu.
 
 ## Components
 
 | Component | Location | Responsibility |
 | --- | --- | --- |
-| Entry point | `src/main/java/ebanking/Main.java` | started by `mvn exec:java`; loads `data/` and prints the counts until `cli-menu` |
+| Entry point | `src/main/java/ebanking/Main.java` | started by `mvn compile exec:java`; loads `data/`, wires storage, repository, service and menu; stops on a corrupt data file |
 | Domain model | `src/main/java/ebanking/model/` | `BankEntity`, `Account`, `Transaction` and subtypes, enums `AccountType`, `TransactionType` |
 | Exceptions | `src/main/java/ebanking/exception/` | `ValidationException` (checked, invalid input), `InsufficientFundsException` (unchecked, thrown by `Account.withdraw`) |
 | Repository | `src/main/java/ebanking/repository/BankRepository.java` | in-memory store of accounts and transactions; rejects duplicate account numbers; read methods return copies |
-| Service | `src/main/java/ebanking/service/TransactionService.java` | `addDeposit`, `addWithdrawal`, `addTransfer`, `deleteTransaction`, `updateTransactionAmount`; validates, mutates, then saves through `CsvBankStorage` |
+| Console menu | `src/main/java/ebanking/cli/ConsoleMenu.java` | reads an `InputStream`, writes a `PrintStream`; menu loop, input parsing, error messages; delegates all rules to `TransactionService` |
+| Service | `src/main/java/ebanking/service/TransactionService.java` | `addDeposit`, `addWithdrawal`, `addTransfer`, `deleteTransaction`, `updateTransactionAmount`, `createAccount`; validates, mutates, then saves through `CsvBankStorage` |
 | Storage | `src/main/java/ebanking/storage/` | `CsvBankStorage` (`save`, `load`) writes and reads `accounts.csv` and `transactions.csv` in a directory; `CsvCodec` quotes and parses fields; `StorageException` (checked) names file and line |
 
 ## Data model
@@ -36,7 +37,7 @@ UTF-8, header line, ISO-8601 dates, `BigDecimal.toPlainString()` amounts, fields
 
 ## Request flow
 
-No user interaction yet; `cli-menu` adds the flow from the console. Service flow: resolve accounts (unknown id gives `ValidationException`), check funds, mutate balances, update repository and histories, then `CsvBankStorage.save`.
+Console flow: `Main` -> `ConsoleMenu` reads a choice and its fields, calls `TransactionService`, prints the result; any `ValidationException`, `InsufficientFundsException`, `StorageException` or number format error prints one line and returns to the menu. Service flow: resolve accounts (unknown id gives `ValidationException`), check funds, mutate balances, update repository and histories, then `CsvBankStorage.save`.
 
 ## Decisions
 
@@ -58,3 +59,7 @@ No user interaction yet; `cli-menu` adds the flow from the console. Service flow
 | D14 | Delete reverses the balance effect; reversal that would make a balance negative throws `InsufficientFundsException` | balances stay consistent with history | transaction-operations |
 | D15 | Funds are checked before any mutation; histories of affected accounts are rebuilt from the repository (last 10) after delete or update | atomic operations without rollback code | transaction-operations |
 | D16 | `save` runs only after success; a failed save leaves memory ahead of disk | accepted in scope; see `crash-safe-save` | transaction-operations |
+| D17 | `ConsoleMenu(InputStream, PrintStream)`, plain `BufferedReader`, no TUI library | testable with scripted input, no new dependency | cli-menu |
+| D18 | Accounts chosen by account number, transactions by list position; ids are never shown | usable output; UUIDs stay internal | cli-menu |
+| D19 | `TransactionService.createAccount` (validate, check duplicate, add, save) | rules and saving stay in the service (D12) | cli-menu |
+| D20 | After an error the user returns to the main menu; end of input exits | simple error handling in one place | cli-menu |

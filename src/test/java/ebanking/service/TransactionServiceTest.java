@@ -147,6 +147,18 @@ class TransactionServiceTest {
         assertEquals(before, read());
     }
 
+    @Test
+    @DisplayName("createAccount stores and saves; a duplicate number is rejected")
+    void createAccountSavesAndRejectsDuplicates() throws Exception {
+        Account created = service.createAccount("RO03", "Cora Dan", bd("5"), AccountType.SAVINGS);
+
+        assertEquals(3, repo.getAccounts().size());
+        assertEquals(created.getId(), storage.load().findAccountById(created.getId()).orElseThrow().getId());
+        assertThrows(ValidationException.class,
+                () -> service.createAccount("RO03", "Other", bd("1"), AccountType.CHECKING));
+        assertEquals(3, repo.getAccounts().size());
+    }
+
     private String read() throws IOException {
         return Files.readString(dir.resolve("accounts.csv")) + Files.readString(dir.resolve("transactions.csv"));
     }
