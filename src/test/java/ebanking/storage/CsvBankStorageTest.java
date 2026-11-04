@@ -165,4 +165,62 @@ class CsvBankStorageTest {
 
         assertTrue(e.getMessage().contains("unknown account"));
     }
+
+    @Test
+    @DisplayName("a second save replaces the data and leaves only the two CSV files")
+    void saveReplacesFilesWithoutLeftovers() throws Exception {
+        BankRepository repo = new BankRepository();
+        account(repo, "RO01", "Ana");
+        CsvBankStorage storage = new CsvBankStorage(dir);
+        storage.save(repo);
+        account(repo, "RO02", "Ion");
+
+        storage.save(repo);
+
+        assertEquals(2, storage.load().getAccounts().size());
+        try (var files = Files.list(dir)) {
+            assertEquals(java.util.Set.of("accounts.csv", "transactions.csv"),
+                    files.map(p -> p.getFileName().toString()).collect(java.util.stream.Collectors.toSet()));
+        }
+    }
+
+    @Test
+    @DisplayName("a failed write keeps both files unchanged and removes the temporary files")
+    void failedWriteKeepsOldFiles() throws Exception {
+        BankRepository repo = new BankRepository();
+        account(repo, "RO01", "Ana");
+        CsvBankStorage storage = new CsvBankStorage(dir);
+        storage.save(repo);
+        byte[] accountsBefore = Files.readAllBytes(dir.resolve("accounts.csv"));
+        byte[] transactionsBefore = Files.readAllBytes(dir.resolve("transactions.csv"));
+        Path blocker = Files.createDirectory(dir.resolve("transactions.csv.tmp"));
+        Files.writeString(blocker.resolve("x"), "x");
+        account(repo, "RO02", "Ion");
+
+        assertThrows(StorageException.class, () -> storage.save(repo));
+
+        assertTrue(java.util.Arrays.equals(accountsBefore, Files.readAllBytes(dir.resolve("accounts.csv"))));
+        assertTrue(java.util.Arrays.equals(transactionsBefore, Files.readAllBytes(dir.resolve("transactions.csv"))));
+        assertTrue(Files.notExists(dir.resolve("accounts.csv.tmp")));
+    }
+
+    @Test
+    @DisplayName("save falls back to a plain replace when atomic move is not supported")
+    void saveFallsBackWithoutAtomicMove() throws Exception {
+        BankRepository repo = new BankRepository();
+        account(repo, "RO01", "Ana");
+        CsvBankStorage.FileMover noAtomic = (source, target, options) -> {
+            if (java.util.Arrays.asList(options).contains(java.nio.file.StandardCopyOption.ATOMIC_MOVE)) {
+                throw new java.nio.file.AtomicMoveNotSupportedException(source.toString(), target.toString(), "test");
+            }
+            Files.move(source, target, options);
+        };
+        CsvBankStorage storage = new CsvBankStorage(dir, noAtomic);
+        storage.save(repo);
+        account(repo, "RO02", "Ion");
+
+        storage.save(repo);
+
+        assertEquals(2, new CsvBankStorage(dir).load().getAccounts().size());
+    }
 }

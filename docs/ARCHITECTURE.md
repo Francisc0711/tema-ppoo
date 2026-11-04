@@ -14,7 +14,7 @@ A Java 17 console application built with Maven. The domain layer (`ebanking.mode
 | Repository | `src/main/java/ebanking/repository/BankRepository.java` | in-memory store of accounts and transactions; rejects duplicate account numbers; read methods return copies |
 | Console menu | `src/main/java/ebanking/cli/ConsoleMenu.java` | reads an `InputStream`, writes a `PrintStream`; menu loop, input parsing, error messages; delegates all rules to `TransactionService` |
 | Service | `src/main/java/ebanking/service/TransactionService.java` | `addDeposit`, `addWithdrawal`, `addTransfer`, `deleteTransaction`, `updateTransactionAmount`, `createAccount`; validates, mutates, then saves through `CsvBankStorage` |
-| Storage | `src/main/java/ebanking/storage/` | `CsvBankStorage` (`save`, `load`) writes and reads `accounts.csv` and `transactions.csv` in a directory; `CsvCodec` quotes and parses fields; `StorageException` (checked) names file and line |
+| Storage | `src/main/java/ebanking/storage/` | `CsvBankStorage` (`save`, `load`) writes (temp file, then move) and reads `accounts.csv` and `transactions.csv` in a directory; `CsvCodec` quotes and parses fields; `StorageException` (checked) names file and line |
 
 ## Data model
 
@@ -58,8 +58,11 @@ Console flow: `Main` -> `ConsoleMenu` reads a choice and its fields, calls `Tran
 | D13 | `Transaction` stays immutable; update replaces it with `withAmount` (same id, `createdAt`, list position) | keeps immutability (OOP-1) | transaction-operations |
 | D14 | Delete reverses the balance effect; reversal that would make a balance negative throws `InsufficientFundsException` | balances stay consistent with history | transaction-operations |
 | D15 | Funds are checked before any mutation; histories of affected accounts are rebuilt from the repository (last 10) after delete or update | atomic operations without rollback code | transaction-operations |
-| D16 | `save` runs only after success; a failed save leaves memory ahead of disk | accepted in scope; see `crash-safe-save` | transaction-operations |
+| D16 | `save` runs only after success; a failed save leaves memory ahead of disk | accepted in scope; open as KI-transaction-operations-2 | transaction-operations |
 | D17 | `ConsoleMenu(InputStream, PrintStream)`, plain `BufferedReader`, no TUI library | testable with scripted input, no new dependency | cli-menu |
 | D18 | Accounts chosen by account number, transactions by list position; ids are never shown | usable output; UUIDs stay internal | cli-menu |
 | D19 | `TransactionService.createAccount` (validate, check duplicate, add, save) | rules and saving stay in the service (D12) | cli-menu |
 | D20 | After an error the user returns to the main menu; end of input exits | simple error handling in one place | cli-menu |
+| D21 | `save` writes each CSV to `<name>.tmp` in the data directory, then moves it over the target (`ATOMIC_MOVE`, fallback `REPLACE_EXISTING`); temp files are removed in `finally` | a crash or write error cannot truncate an existing file; same directory means same file system; JDK only | crash-safe-save |
+| D22 | Package-private `FileMover` seam and constructor in `CsvBankStorage` | lets tests force the non-atomic fallback; public API unchanged | crash-safe-save |
+| D23 | Both files are moved one after the other, not as one unit | accepted in scope; open as TD-crash-safe-save-1, follow-up `atomic-pair-save` | crash-safe-save |
