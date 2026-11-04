@@ -13,7 +13,7 @@ Status: the domain layer, CSV persistence, transaction processing and the consol
 | In-memory store: add and find accounts and transactions | `ebanking.repository.BankRepository` (Java API) | app-foundation |
 | Add deposits, withdrawals and transfers that change balances (`InsufficientFundsException` on overdraw), update the amount of or delete a transaction (balance effect reversed); every success is saved to the CSV files | `ebanking.service.TransactionService` (Java API, used by the console menu); `createAccount` validates, rejects duplicate numbers and saves | transaction-operations |
 | Console menu: create and list accounts; deposit, withdraw, transfer; list (numbered), update and delete transactions of an account; show the last 10 transactions; errors print one line and return to the menu | `ebanking.cli.ConsoleMenu` (started by `Main`) | cli-menu |
-| Save and load all accounts and transactions as `accounts.csv` and `transactions.csv` (invalid data fails the load with file name and line number) | `ebanking.storage.CsvBankStorage` (Java API) | file-persistence |
+| Save and load all accounts and transactions as `accounts.csv` and `transactions.csv` (invalid data fails the load with file name and line number); a save writes temporary files first and then moves them over the old ones, so a crash or write error cannot truncate an existing file | `ebanking.storage.CsvBankStorage` (Java API) | file-persistence, crash-safe-save |
 
 ## Requirements
 
@@ -38,7 +38,7 @@ The data directory is `data/` (git-ignored), fixed in `Main`. It holds `accounts
 mvn compile exec:java
 ```
 
-This loads `data/` (empty repository if the files are missing) and opens the console menu. Accounts are chosen by account number and transactions by their number in the listed order; every change is saved to the CSV files immediately. A corrupt data file stops the program with a message and is not overwritten.
+This loads `data/` (empty repository if the files are missing) and opens the console menu. Accounts are chosen by account number and transactions by their number in the listed order; every change is saved to the CSV files immediately (a failed save leaves the old files unchanged). A corrupt data file stops the program with a message and is not overwritten.
 
 ## Test
 
