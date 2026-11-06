@@ -19,13 +19,13 @@ Status: the domain layer, CSV persistence, transaction processing and the consol
 
 - JDK 17
 - Maven 3.8 or newer
-- Git, and GitHub CLI (`gh`) for pull requests
-- A coding agent that reads skills, for example Antigravity CLI (`agy`)
+- Git
 
 ## Setup
 
 ```bash
 mvn clean install -DskipTests
+
 ```
 
 ## Configuration
@@ -36,6 +36,7 @@ The data directory is `data/` (git-ignored), fixed in `Main`. It holds `accounts
 
 ```bash
 mvn compile exec:java
+
 ```
 
 This loads `data/` (empty repository if the files are missing) and opens the console menu. Accounts are chosen by account number and transactions by their number in the listed order; every change is saved to the CSV files immediately (a failed save leaves the old files unchanged). A corrupt data file stops the program with a message and is not overwritten.
@@ -44,10 +45,11 @@ This loads `data/` (empty repository if the files are missing) and opens the con
 
 ```bash
 mvn test
+
 ```
 
 JUnit 5 tests are in `src/test/java/ebanking/`.
 
-## Development workflow
+```
 
-Every change is a task that goes through eight phases, each one a skill in `.agents/skills/`; the rules are in `AGENTS.md`. A task starts with `/task-scoping`, which takes the next roadmap item when it gets no request. The later phases (`/task-planning`, `/task-plan-critique`, `/task-development`, `/task-code-review`, `/task-testing`, `/task-gitops`, `/task-doc-updates`) find the task from the current branch. The files of a task are in `work/<slug>/` while it is open and in `work/done/<slug>/` after it is finished.
+```
